@@ -1,0 +1,21 @@
+websockd turns any program into a websocket server.
+
+When a new request is received, inetd is configured to run websockd
+instead of the server program. websockd handles the initial handshake
+and connection upgrade, and then silently passes data back and forth
+between the websocket client and your server program. Websocket framing
+is removed from incoming data and added to outgoing data, so the server
+program can simply read and write bytes from standard IO without needing
+to worry about the underlying websocket protocol.
+
+websockd takes the name of the server to run from argument zero. By
+default, it will look for the server program to run in `/usr/sbin'.
+
+EXAMPLES
+
+The following line in /etc/inetd.conf will listed for a websocket
+connection on port 8002 and connect it to the server program at
+`/usr/sbin/life':
+
+8002    stream  tcp     nowait  nobody  /usr/sbin/websockd      life
+

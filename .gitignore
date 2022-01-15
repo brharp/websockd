@@ -2,4 +2,6 @@
 .vscode
 jsh
 websockd
+*.o
+a.out
 

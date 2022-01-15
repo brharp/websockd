@@ -8,7 +8,7 @@ CFLAGS = -DDEBUG -Wall -g
 a.out: $(obj)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-install: $(prognam)
+install: a.out
 	install a.out /usr/sbin/$(prognam)
 	mkdir -p /var/www/htdocs/$(prognam)
 	cp index.html $(prognam).js /var/www/htdocs/$(prognam)

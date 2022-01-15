@@ -90,14 +90,12 @@ int time[] = { 4, 4 };
 
 int length = sizeof(string)/sizeof(*string);
 
-int pos = 0;
-
-int insdepth = 3;
+struct { int pos; int depth; } caret;
 
 int depth(int i)
 {
 	int s;
-	return ((s = string[i]) == 0 ? insdepth : s) * em + em / 3;
+	return ((s = string[i]) == 0 ? caret.depth : s) * em + em / 3;
 }
 
 int width(int i)
@@ -224,11 +222,11 @@ void note(int i, int x, int y)
 	grestore();
 }
 
-void caret(int i)
+void paintcaret()
 {
 	struct rect r;
 
-	mtov(i, &r);
+	mtov(caret.pos, &r);
 
 	printf("%s.save();", cx);
 	printf("%s.strokeStyle = '%s';", cx, "red");
@@ -275,31 +273,30 @@ void paint()
 			x += 10;
 		}
 		note(i, x, y);
-		//if (i == pos) {
-			//caret(i);
-		//}
 	}
 
 	bar(x, y);
 
-	caret(pos);
+	paintcaret();
 
 	printf("%s.restore();\n", cx);
 
 	fflush(stdout);
 }
 
-void setpos(int newpos)
+void setpos(int newpos, int newdepth)
 {
 	struct rect r;
 
-	if (newpos < 0 || newpos > length)
+	if (newpos < 0 || newpos > length || newdepth < 1 || newdepth > 5)
 		return;
 
 	printf("%s.save();", cx);
 
-	mtov(pos, &r);
+	mtov(caret.pos, &r);
 	printf("%s.rect(%d, %d, %d, %d);", cx, r.x - 5, r.y - 5, r.width + 10, r.height + 10);
+
+	caret.depth = newdepth;
 
 	mtov(newpos, &r);
 	printf("%s.rect(%d, %d, %d, %d);", cx, r.x - 5, r.y - 5, r.width + 10, r.height + 10);
@@ -307,7 +304,7 @@ void setpos(int newpos)
 
 	//printf("%s.fillRect(0, 0, %d, %d)\n", cx, cw, ch);
 
-	pos = newpos;
+	caret.pos = newpos;
 	paint();
 
 	printf("%s.restore();", cx);
@@ -320,25 +317,22 @@ int main(int argc, char *argv[])
 	setup();
 	paint();
 
+	caret.pos = 0;
+	caret.depth = 3;
+
 	while ((c = getchar()) != EOF) {
 		switch (c) {
 		case 'l':
-			setpos(pos + 1);
+			setpos(caret.pos + 1, caret.depth);
 			break;
 		case 'h':
-			setpos(pos - 1);
+			setpos(caret.pos - 1, caret.depth);
 			break;
 		case 'j':
-			if (insdepth < 5) {
-				insdepth++;
-				setpos(pos);
-			}
+			setpos(caret.pos, caret.depth + 1);
 			break;
 		case 'k':
-			if (insdepth > 1) {
-				insdepth--;
-				setpos(pos);
-			}
+			setpos(caret.pos, caret.depth - 1);
 			break;
 		}
 	}

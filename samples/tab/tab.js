@@ -10,7 +10,7 @@ function staffline() {
 function staff(x, y) {
 	cx.save();
 	cx.translate(0, y);
-	cx.strokeStyle = "gray";
+	cx.strokeStyle = "lightgray";
 	for (let i = 0; i < 5; i++) {
 		staffline();
 	}

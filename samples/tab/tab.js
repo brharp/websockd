@@ -1,5 +1,5 @@
 
-function staffline() {
+function staffline(cx) {
 	cx.translate(0, 16)
 	cx.beginPath()
 	cx.moveTo(0, 0)
@@ -7,12 +7,12 @@ function staffline() {
 	cx.stroke()
 }
 
-function staff(x, y) {
+function staff(cx, x, y) {
 	cx.save();
 	cx.translate(0, y);
 	cx.strokeStyle = "lightgray";
 	for (let i = 0; i < 5; i++) {
-		staffline();
+		staffline(cx);
 	}
 	cx.restore();
 }

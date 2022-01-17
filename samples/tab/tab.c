@@ -1,16 +1,6 @@
-
 #include <stdio.h>
-
-#define CALL(X) " " X "(cx) " "\n"
-#define GSAVE " cx.save() " "\n"
-#define GRESTORE " cx.restore() " "\n"
-#define LINETO(X,Y) " cx.lineTo(" X ", " Y ") " "\n"
-#define MOVETO(X,Y) " cx.moveTo(" X ", " Y ") " "\n"
-#define NEWPATH " cx.beginPath() " "\n"
-#define SETLINEWIDTH(X) " cx.lineWidth = " X " " "\n"
-#define SHOW(T,X,Y) " cx.fillText('" T "', " X ", " Y ") " "\n"
-#define STROKE " cx.stroke() " "\n"
-#define TRANSLATE(X,Y) " cx.translate(" X ", " Y ") " "\n"
+#include <string.h>
+#include "graph.h"
 
 struct rect { int x; int y; int width; int height; };
 
@@ -22,6 +12,7 @@ const char *px = "px";
 const int cw = 600;
 const int ch = 800;
 const int em = 16;
+const int ex = 8;
 
 /*
 struct {
@@ -110,43 +101,7 @@ int delta(int i)
 
 void call(const char *fn)
 {
-	printf(CALL("%s"), fn);
-}
-
-void gsave()
-{
-	printf(GSAVE);
-}
-
-void grestore()
-{
-	printf(GRESTORE);
-}
-
-void newpath()
-{
-	printf(NEWPATH);
-}
-
-void moveto(int x, int y)
-{
-	printf(MOVETO("%d", "%d"), x, y);
-}
-
-void lineto(int x, int y)
-{
-	printf(LINETO("%d", "%d"), x, y);
-}
-
-void setlinewidth(double x)
-{
-	printf(SETLINEWIDTH("%f"), x);
-}
-
-void show(int i, int x, int y)
-{
-	printf("%s.fillText('%d', %d - %s.measureText('%d').width / 2, %d)\n",
-		cx, fret[i], x, cx, fret[i], y);
+	printf("dl.push((cx) => %s(cx));\n", fn);
 }
 
 void mtov(int index, struct rect *r)
@@ -177,19 +132,9 @@ void mtov(int index, struct rect *r)
 	r->height = em;
 }
 
-void stroke()
-{
-	printf(STROKE);
-}
-
-void translate(int x, int y)
-{
-	printf(TRANSLATE("%d", "%d"), x, y);
-}
-
 void bar(int x, int y)
 {
-	newpath();
+	beginpath();
 	moveto(x, y + em);
 	lineto(x, y + 5 * em);
 	stroke();
@@ -197,29 +142,31 @@ void bar(int x, int y)
 
 void note(int i, int x, int y)
 {
-	gsave();
+	char s[10];
+
+	save();
 	translate(0, y);
-	show(i, x, depth(i));
+	sprintf(s, "%d", fret[i]);
+	filltext(s, x - strlen(s) * ex / 2, depth(i));
 	if (stem[i]) {
-		newpath();
+		beginpath();
 		moveto(x, 6 * em);
 		lineto(x, depth(i) + 2);
 		stroke();
 	}
 	if (beam[i]) {
-		gsave();
+		save();
 		setlinewidth(2);
-		newpath();
+		beginpath();
 		moveto(x, 6 * em);
 		lineto(x + width(i), 6 * em);
 		stroke();
-		grestore();
+		restore();
 	}
 	if (hon[i]) {
-		printf("cx.fillText('%s', %d, %d)\n",
-			"H", x + width(i)/2, depth(i) - 5);
+		filltext("H", x + width(i)/2, depth(i) - 5);
 	}
-	grestore();
+	restore();
 }
 
 void paintcaret()
@@ -228,11 +175,10 @@ void paintcaret()
 
 	mtov(caret.pos, &r);
 
-	printf("%s.save();", cx);
-	printf("%s.strokeStyle = '%s';", cx, "red");
-	printf("%s.strokeRect(%d, %d, %d, %d);", cx, r.x, r.y, r.width, r.height);
-	printf("%s.restore();", cx);
-	printf("\n");
+	save();
+	setstrokestyle("red");
+	strokerect(r.x, r.y, r.width, r.height);
+	restore();
 }
 
 void setup()
@@ -248,17 +194,18 @@ void setup()
 	printf("%s.fillStyle = '%s'\n", cx, "black");
 	printf("%s.font = '%dpx sans'\n", cx, em);
 	printf("%s.scale(%s, %s)\n", cx, dp, dp);
-
-	translate(30, 20);
+	printf("%s.translate(%d, %d)\n", cx, 30, 20);
 }
 
 void paint()
 {
 	int i, x = 0, y = 0, t;
 
-	printf("%s.save();", cx);
-	printf("%s.clearRect(%d, %d, %d, %d);", cx, 0, 0, cw, ch);
-	printf("staff(%d, %d);", x, y);
+	beginpaint();
+	save();
+	clearrect(0, 0, cw, ch);
+
+	printf("dl.push((cx) => staff(cx, %d, %d));\n", x, y);
 
 	for (i = 0, x = 10, t = 0; i < length;
 	     x += width(i), t += delta(i), i++) {
@@ -266,7 +213,7 @@ void paint()
 			bar(x, y);
 			x = 0;
 			y += 100;
-			printf("staff(%d, %d);", x, y);
+			printf("dl.push((cx) => staff(cx, %d, %d));\n", x, y);
 		}
 		if (t > 0 && t % 16 == 0) {
 			bar(x, y);
@@ -278,8 +225,8 @@ void paint()
 	bar(x, y);
 
 	paintcaret();
-
-	printf("%s.restore();\n", cx);
+	restore();
+	endpaint();
 
 	fflush(stdout);
 }

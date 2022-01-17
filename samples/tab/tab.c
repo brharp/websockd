@@ -99,11 +99,6 @@ int delta(int i)
 	return 16 / duration[i];
 }
 
-void call(const char *fn)
-{
-	printf("dl.push((cx) => %s(cx));\n", fn);
-}
-
 void mtov(int index, struct rect *r)
 {
 	int i, x, y = 0, t;
@@ -132,53 +127,75 @@ void mtov(int index, struct rect *r)
 	r->height = em;
 }
 
-void bar(int x, int y)
+void staffline(const char *cx)
 {
-	beginpath();
-	moveto(x, y + em);
-	lineto(x, y + 5 * em);
-	stroke();
+	translate(cx, 0, 16);
+	beginpath(cx);
+	moveto(cx, 0, 0);
+	lineto(cx, 510, 0);
+	stroke(cx);
 }
 
-void note(int i, int x, int y)
+void staff(const char *cx, int x, int y)
+{
+	int i;
+
+	save(cx);
+	translate(cx, 0, y);
+	setstrokestyle(cx, "lightgray");
+	for (i = 0; i < 5; i++) {
+		staffline(cx);
+	}
+	restore(cx);
+}
+
+void bar(const char *cx, int x, int y)
+{
+	beginpath(cx);
+	moveto(cx, x, y + em);
+	lineto(cx, x, y + 5 * em);
+	stroke(cx);
+}
+
+void note(const char *cx, int i, int x, int y)
 {
 	char s[10];
 
-	save();
-	translate(0, y);
+	save(cx);
+	translate(cx, 0, y);
 	sprintf(s, "%d", fret[i]);
-	filltext(s, x - strlen(s) * ex / 2, depth(i));
+	filltext(cx, s, x - strlen(s) * ex / 2, depth(i));
 	if (stem[i]) {
-		beginpath();
-		moveto(x, 6 * em);
-		lineto(x, depth(i) + 2);
-		stroke();
+		beginpath(cx);
+		moveto(cx, x, 6 * em);
+		lineto(cx, x, depth(i) + 2);
+		stroke(cx);
 	}
 	if (beam[i]) {
-		save();
-		setlinewidth(2);
-		beginpath();
-		moveto(x, 6 * em);
-		lineto(x + width(i), 6 * em);
-		stroke();
-		restore();
+		save(cx);
+		setlinewidth(cx, 2);
+		beginpath(cx);
+		moveto(cx, x, 6 * em);
+		lineto(cx, x + width(i), 6 * em);
+		stroke(cx);
+		restore(cx);
 	}
 	if (hon[i]) {
-		filltext("H", x + width(i)/2, depth(i) - 5);
+		filltext(cx, "H", x + width(i)/2, depth(i) - 5);
 	}
-	restore();
+	restore(cx);
 }
 
-void paintcaret()
+void paintcaret(const char *cx)
 {
 	struct rect r;
 
 	mtov(caret.pos, &r);
 
-	save();
-	setstrokestyle("red");
-	strokerect(r.x, r.y, r.width, r.height);
-	restore();
+	save(cx);
+	setstrokestyle(cx, "red");
+	strokerect(cx, r.x, r.y, r.width, r.height);
+	restore(cx);
 }
 
 void setup()
@@ -189,7 +206,6 @@ void setup()
 	printf("%s.height = %d * %s\n", cv, ch, dp);
 	printf("%s.style.width = %d + '%s'\n", cv, cw, px);
 	printf("%s.style.height = %d + '%s'\n", cv, ch, px);
-
 	printf("%s = %s.getContext('2d')\n", cx, cv);
 	printf("%s.fillStyle = '%s'\n", cx, "black");
 	printf("%s.font = '%dpx sans'\n", cx, em);
@@ -197,36 +213,38 @@ void setup()
 	printf("%s.translate(%d, %d)\n", cx, 30, 20);
 }
 
-void paint()
+void paint(const char *cx)
 {
 	int i, x = 0, y = 0, t;
+	const char *dl = "dl";
 
-	beginpaint();
-	save();
-	clearrect(0, 0, cw, ch);
+	newlist(dl);
 
-	printf("dl.push((cx) => staff(cx, %d, %d));\n", x, y);
+	save(dl);
+	clearrect(dl, 0, 0, cw, ch);
 
-	for (i = 0, x = 10, t = 0; i < length;
-	     x += width(i), t += delta(i), i++) {
+	staff(dl, x, y);
+
+	for (i = 0, x = 10, t = 0; i < length; x += width(i), t += delta(i), i++) {
 		if (t > 0 && t % 48 == 0) {
-			bar(x, y);
+			bar(dl, x, y);
 			x = 0;
 			y += 100;
-			printf("dl.push((cx) => staff(cx, %d, %d));\n", x, y);
+			staff(dl, x, y);
 		}
 		if (t > 0 && t % 16 == 0) {
-			bar(x, y);
+			bar(dl, x, y);
 			x += 10;
 		}
-		note(i, x, y);
+		note(dl, i, x, y);
 	}
 
-	bar(x, y);
+	bar(dl, x, y);
 
-	paintcaret();
-	restore();
-	endpaint();
+	paintcaret(dl);
+	restore(dl);
+
+	call(dl, cx);
 
 	fflush(stdout);
 }
@@ -238,23 +256,22 @@ void setpos(int newpos, int newdepth)
 	if (newpos < 0 || newpos > length || newdepth < 1 || newdepth > 5)
 		return;
 
-	printf("%s.save();", cx);
+	save(cx);
 
 	mtov(caret.pos, &r);
-	printf("%s.rect(%d, %d, %d, %d);", cx, r.x - 5, r.y - 5, r.width + 10, r.height + 10);
+	rect(cx, r.x - 1, r.y - 1, r.width + 2, r.height + 2);
 
 	caret.depth = newdepth;
 
 	mtov(newpos, &r);
-	printf("%s.rect(%d, %d, %d, %d);", cx, r.x - 5, r.y - 5, r.width + 10, r.height + 10);
-	printf("%s.clip();", cx);
+	rect(cx, r.x - 1, r.y - 1, r.width + 2, r.height + 2);
 
-	//printf("%s.fillRect(0, 0, %d, %d)\n", cx, cw, ch);
+	clip(cx);
 
 	caret.pos = newpos;
-	paint();
+	paint(cx);
 
-	printf("%s.restore();", cx);
+	restore(cx);
 }
 
 int main(int argc, char *argv[])
@@ -262,7 +279,7 @@ int main(int argc, char *argv[])
 	int c;
 
 	setup();
-	paint();
+	paint(cx);
 
 	caret.pos = 0;
 	caret.depth = 3;

@@ -1,97 +1,98 @@
 #include <stdio.h>
 
 void
-beginpaint()
+newlist(const char *dl)
 {
-	printf("dl = new Array();\n");
+	printf("%s = new DisplayList();\n", dl);
 }
 
 void
-endpaint()
+call(const char *dl, const char *cx)
 {
-	printf("dl.forEach((op) => op(cx));\n");
+	printf("%s.call(%s);\n", dl, cx);
 }
 
 void
-beginpath()
+beginpath(const char *cx)
 {
-	printf("dl.push((cx) => cx.beginPath());\n");
+	printf("%s.beginPath();\n", cx);
 }
 
 void
-clearrect(int x, int y, int width, int height)
+clearrect(const char *cx, int x, int y, int width, int height)
 {
-	printf("dl.push((cx) => cx.clearRect(%d, %d, %d, %d));\n", x, y, width, height);
+	printf("%s.clearRect(%d, %d, %d, %d);\n", cx, x, y, width, height);
 }
 
 void
-filltext(const char *s, int x, int y)
+clip(const char *cx)
 {
-	printf("dl.push((cx) => cx.fillText('%s', %d, %d));\n", s, x, y);
+	printf("%s.clip();\n", cx);
 }
 
 void
-lineto(int x, int y)
+filltext(const char *cx, const char *s, int x, int y)
 {
-	printf("dl.push((cx) => cx.lineTo(%d, %d));\n", x, y);
+	printf("%s.fillText('%s', %d, %d);\n", cx, s, x, y);
 }
 
 void
-moveto(int x, int y)
+lineto(const char *cx, int x, int y)
 {
-	printf("dl.push((cx) => cx.moveTo(%d, %d));\n", x, y);
+	printf("%s.lineTo(%d, %d);\n", cx, x, y);
 }
 
 void
-restore()
+moveto(const char *cx, int x, int y)
 {
-	printf("dl.push((cx) => cx.restore());\n");
+	printf("%s.moveTo(%d, %d);\n", cx, x, y);
 }
 
 void
-save()
+rect(const char *cx, int x, int y, int width, int height)
 {
-	printf("dl.push((cx) => cx.save());\n");
+	printf("%s.rect(%d, %d, %d, %d);\n", cx, x, y, width, height);
 }
 
 void
-setlinewidth(double x)
+restore(const char *cx)
 {
-	printf("dl.push((cx) => cx.lineWidth = %f);\n", x);
+	printf("%s.restore();\n", cx);
 }
 
 void
-setstrokestyle(const char *s)
+save(const char *cx)
 {
-	printf("dl.push((cx) => cx.strokeStyle = '%s');\n", s);
+	printf("%s.save();\n", cx);
 }
 
 void
-stroke()
+setlinewidth(const char *cx, double x)
 {
-	printf("dl.push((cx) => cx.stroke());\n");
+	printf("%s.lineWidth = %f;\n", cx, x);
 }
 
 void
-strokerect(int x, int y, int width, int height)
+setstrokestyle(const char *cx, const char *s)
 {
-	printf("dl.push((cx) => cx.strokeRect(%d, %d, %d, %d));\n", x, y, width, height);
+	printf("%s.strokeStyle = '%s';\n", cx, s);
 }
 
 void
-translate(int x, int y)
+stroke(const char *cx)
 {
-	printf("dl.push((cx) => cx.translate(%d, %d));\n", x, y);
+	printf("%s.stroke();\n", cx);
 }
 
-
-
-/*
-void show(int i, int x, int y)
+void
+strokerect(const char *cx, int x, int y, int width, int height)
 {
-	printf("%s.fillText('%d', %d - %s.measureText('%d').width / 2, %d)\n",
-		cx, fret[i], x, cx, fret[i], y);
+	printf("%s.strokeRect(%d, %d, %d, %d);\n", cx, x, y, width, height);
 }
-*/
 
+void
+translate(const char *cx, int x, int y)
+{
+	printf("%s.translate(%d, %d);\n", cx, x, y);
+}
 

@@ -11,7 +11,7 @@ a.out: $(obj)
 install: a.out
 	install a.out /usr/sbin/$(prognam)
 	mkdir -p /var/www/htdocs/$(prognam)
-	cp index.html $(prognam).js /var/www/htdocs/$(prognam)
+	cp *.html *.js /var/www/htdocs/$(prognam)
 
 .PHONY: clean
 clean:

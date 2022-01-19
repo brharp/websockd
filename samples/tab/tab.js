@@ -28,6 +28,9 @@ document.body.addEventListener("keyup", (event) => {
     case 'k':
       ws.send('k');
       break;
+    default:
+      ws.send(event.key);
+      break;
   }
 });
 

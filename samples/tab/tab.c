@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "graph.h"
+
+#define MAXLEN 256
+#define MAXFRET 24
 
 struct rect { int x; int y; int width; int height; };
 
@@ -14,7 +18,6 @@ const int ch = 800;
 const int em = 16;
 const int ex = 8;
 
-/*
 struct {
 	int string;
 	int fret;
@@ -22,12 +25,7 @@ struct {
 	int stem;
 	int beam;
 	int hon;
-} tune[] = {
-	3, 0, 4, 1, 0, 0,
-	5, 0, 4, 1, 0, 0,
-
-};
-*/
+} tune[MAXLEN];
 
 int string[] = {
  3, 5, 1, 2, 1, 2,
@@ -35,6 +33,7 @@ int string[] = {
  3, 1, 1, 2, 2, 3,
  3, 3, 3, 3, 2, 3, 3,
  3, 3, 5, 3, 3, 3,
+ 0
 };
 
 int fret[] = {
@@ -79,24 +78,43 @@ int hon[] = {
 
 int time[] = { 4, 4 };
 
-int length = sizeof(string)/sizeof(*string);
+int length;
+
+void initune()
+{
+	int i;
+
+	bzero(tune, sizeof(tune));
+
+	for (i = 0; i < MAXLEN; i++) {
+		if ((tune[i].string = string[i]) == 0)
+			break;
+		tune[i].fret = fret[i];
+		tune[i].duration = duration[i];
+		tune[i].stem = stem[i];
+		tune[i].beam = beam[i];
+		tune[i].hon = hon[i];
+	}
+
+	length = i;
+}
 
 struct { int pos; int depth; } caret;
 
 int depth(int i)
 {
 	int s;
-	return ((s = string[i]) == 0 ? caret.depth : s) * em + em / 3;
+	return ((s = tune[i].string) == 0 ? caret.depth : s) * em + em / 3;
 }
 
 int width(int i)
 {
-	return 160 / duration[i];
+	return 160 / tune[i].duration;
 }
 
 int delta(int i)
 {
-	return 16 / duration[i];
+	return 16 / tune[i].duration;
 }
 
 void mtov(int index, struct rect *r)
@@ -163,15 +181,15 @@ void note(const char *cx, int i, int x, int y)
 
 	save(cx);
 	translate(cx, 0, y);
-	sprintf(s, "%d", fret[i]);
+	sprintf(s, "%d", tune[i].fret);
 	filltext(cx, s, x - strlen(s) * ex / 2, depth(i));
-	if (stem[i]) {
+	if (tune[i].stem) {
 		beginpath(cx);
 		moveto(cx, x, 6 * em);
 		lineto(cx, x, depth(i) + 2);
 		stroke(cx);
 	}
-	if (beam[i]) {
+	if (tune[i].beam) {
 		save(cx);
 		setlinewidth(cx, 2);
 		beginpath(cx);
@@ -180,7 +198,7 @@ void note(const char *cx, int i, int x, int y)
 		stroke(cx);
 		restore(cx);
 	}
-	if (hon[i]) {
+	if (tune[i].hon) {
 		filltext(cx, "H", x + width(i)/2, depth(i) - 5);
 	}
 	restore(cx);
@@ -274,9 +292,42 @@ void setpos(int newpos, int newdepth)
 	restore(cx);
 }
 
+void repaint()
+{
+	paint(cx);
+}
+
+void input(char c)
+{
+	int i, n, f;
+
+	i = caret.pos;
+	n = c - '0';
+	f = tune[i].fret * 10;
+
+	if (f + n > MAXFRET)
+		f = n;
+	else
+		f += n;
+
+	tune[i].fret = f;
+
+	if (i == length) {
+		tune[i].string = caret.depth;
+		tune[i].duration = 8;
+		++length;
+	}
+
+	//tune[i].stem = (tune[i].duration > 2);
+
+	repaint();
+}
+
 int main(int argc, char *argv[])
 {
 	int c;
+
+	initune();
 
 	setup();
 	paint(cx);
@@ -297,6 +348,11 @@ int main(int argc, char *argv[])
 			break;
 		case 'k':
 			setpos(caret.pos, caret.depth - 1);
+			break;
+		default:
+			if (isdigit(c)) {
+				input(c);
+			}
 			break;
 		}
 	}

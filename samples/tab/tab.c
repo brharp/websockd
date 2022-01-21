@@ -99,7 +99,7 @@ void initune()
 	length = i;
 }
 
-struct { int pos; int depth; } caret;
+struct { int pos; int depth; int duration; } caret;
 
 int depth(int i)
 {
@@ -267,6 +267,21 @@ void paint(const char *cx)
 	fflush(stdout);
 }
 
+void repaint()
+{
+	paint(cx);
+}
+
+void setdur(int dur)
+{
+	caret.duration = dur;
+
+	if (caret.pos < length) {
+		tune[caret.pos].duration = dur;
+		repaint();
+	}
+}
+
 void setpos(int newpos, int newdepth)
 {
 	struct rect r;
@@ -292,10 +307,6 @@ void setpos(int newpos, int newdepth)
 	restore(cx);
 }
 
-void repaint()
-{
-	paint(cx);
-}
 
 void input(char c)
 {
@@ -314,7 +325,7 @@ void input(char c)
 
 	if (i == length) {
 		tune[i].string = caret.depth;
-		tune[i].duration = 8;
+		tune[i].duration = caret.duration;
 		++length;
 	}
 
@@ -334,6 +345,7 @@ int main(int argc, char *argv[])
 
 	caret.pos = 0;
 	caret.depth = 3;
+	caret.duration = 4;
 
 	while ((c = getchar()) != EOF) {
 		switch (c) {
@@ -348,6 +360,12 @@ int main(int argc, char *argv[])
 			break;
 		case 'k':
 			setpos(caret.pos, caret.depth - 1);
+			break;
+		case 'e':
+			setdur(8);
+			break;
+		case 'q':
+			setdur(4);
 			break;
 		default:
 			if (isdigit(c)) {

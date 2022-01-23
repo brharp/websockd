@@ -18,13 +18,14 @@ const int ch = 800;
 const int em = 16;
 const int ex = 8;
 
-struct {
+struct note {
 	int string;
 	int fret;
 	int duration;
 	int stem;
 	int beam;
 	int hon;
+	int flags;
 } tune[MAXLEN];
 
 int string[] = {
@@ -198,6 +199,12 @@ void note(const char *cx, int i, int x, int y)
 		stroke(cx);
 		restore(cx);
 	}
+	if (tune[i].flags) {
+		beginpath(cx);
+		moveto(cx, x, 6 * em);
+		lineto(cx, x + ex, 5 * em);
+		stroke(cx);
+	}
 	if (tune[i].hon) {
 		filltext(cx, "H", x + width(i)/2, depth(i) - 5);
 	}
@@ -267,8 +274,30 @@ void paint(const char *cx)
 	fflush(stdout);
 }
 
+void calcbeams()
+{
+	int i, t = 0, d1, d2, b;
+	
+	for (i = 0; i < length; i++) {
+		tune[i].flags = (tune[i].duration == 8);
+	}
+
+	for (i = 0; i < length - 1; i++) {
+		d1 = tune[i].duration;
+		d2 = tune[i+1].duration;
+		b = ((d1 == d2) && (d1 == 8) && (t % 4 == 0));
+		tune[i].beam = b;
+		t += delta(i);
+		if (b) {
+			tune[i].flags = 0;
+			tune[i+1].flags = 0;
+		}
+	}
+}
+
 void repaint()
 {
+	calcbeams();
 	paint(cx);
 }
 

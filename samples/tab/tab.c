@@ -123,11 +123,11 @@ void mtov(int index, struct rect *r)
 	int i, x, y = 0, t;
 
 	for (i = 0, x = 10, t = 0; i < index; x += width(i), t += delta(i), i++) {
-		if (t > 0 && t % 48 == 0) {
+		if (t > 0 && ((t % 48 == 0) || (t % 48) + delta(i) > 48)) {
 			x = 0;
 			y += 100;
 		}
-		if (t > 0 && t % 16 == 0) {
+		if (t > 0 && ((t % 16 == 0) || (t % 16) + delta(i) > 16)) {
 			x += 10;
 		}
 	}
@@ -251,13 +251,13 @@ void paint(const char *cx)
 	staff(dl, x, y);
 
 	for (i = 0, x = 10, t = 0; i < length; x += width(i), t += delta(i), i++) {
-		if (t > 0 && t % 48 == 0) {
+		if (t > 0 && ((t % 48 == 0) || (t % 48) + delta(i) > 48)) {
 			bar(dl, x, y);
 			x = 0;
 			y += 100;
 			staff(dl, x, y);
 		}
-		if (t > 0 && t % 16 == 0) {
+		if (t > 0 && ((t % 16 == 0) || (t % 16) + delta(i) > 16)) {
 			bar(dl, x, y);
 			x += 10;
 		}

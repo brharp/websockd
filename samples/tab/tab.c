@@ -118,28 +118,45 @@ int delta(int i)
 	return 16 / tune[i].duration;
 }
 
+/* Translate model coordinate to view coordinates. The model
+   coordinate, index, is an offset in the tune array. It must be greater
+   than or equal to zero, and less than or equal to the length of the
+   tune. An index equal to the tune length is a special case, it allows
+   for addressing the position just past the end of the array (where
+   new notes are appended to the tune.) r is a pointer to a rectangle
+   (struct rect) that will be filled in with the view coordinates. */
 void mtov(int index, struct rect *r)
 {
 	int i, x, y = 0, t;
 
+	/* Measure width of tune up to index position. */
 	for (i = 0, x = 10, t = 0; i < index; x += width(i), t += delta(i), i++) {
+		/* If t falls after the last measure, or the next note would 
+		   extend beyond the end of the last measure, break the line. */
 		if (t > 0 && ((t % 48 == 0) || (t % 48) + delta(i) > 48)) {
 			x = 0;
 			y += 100;
 		}
+		/* If t falls between measures or the next note would extend
+		   beyond the end of the measure, end the measure. */
 		if (t > 0 && ((t % 16 == 0) || (t % 16) + delta(i) > 16)) {
 			x += 10;
 		}
 	}
 
+	/* If time is left at the end of a line, break to the next line. */
 	if (t > 0 && t % 48 == 0) {
 		x = 0;
 		y += 100;
 	}
+
+	/* If time t is left at the end of a measure, move to next measure. */
 	if (t > 0 && t % 16 == 0) {
+
 		x += 10;
 	}
 
+	/* Center rectangle around midpoint of position. */
 	r->x = x - em / 2;
 	r->y = depth(i) + y - em + 2;
 	r->width = em;

@@ -5,6 +5,7 @@
 
 #define MAXLEN 256
 #define MAXFRET 24
+#define MAXSTR 5
 
 struct rect { int x; int y; int width; int height; };
 
@@ -20,7 +21,7 @@ const int ex = 8;
 
 struct note {
 	int string;
-	int fret;
+	int fret[MAXSTR];
 	int duration;
 	int stem;
 	int beam;
@@ -83,14 +84,15 @@ int length;
 
 void initune()
 {
-	int i;
+	int i, j;
 
 	bzero(tune, sizeof(tune));
 
 	for (i = 0; i < MAXLEN; i++) {
-		if ((tune[i].string = string[i]) == 0)
+		if ((j = string[i]) == 0)
 			break;
-		tune[i].fret = fret[i];
+		tune[i].string = 1 << (j - 1);
+		tune[i].fret[j-1] = fret[i];
 		tune[i].duration = duration[i];
 		tune[i].stem = stem[i];
 		tune[i].beam = beam[i];
@@ -102,10 +104,9 @@ void initune()
 
 struct { int pos; int depth; int duration; } caret;
 
-int depth(int i)
+int depth(int j)
 {
-	int s;
-	return ((s = tune[i].string) == 0 ? caret.depth : s) * em + em / 3;
+	return (j + 1) * em + em / 3;
 }
 
 int width(int i)
@@ -158,7 +159,7 @@ void mtov(int index, struct rect *r)
 
 	/* Center rectangle around midpoint of position. */
 	r->x = x - em / 2;
-	r->y = depth(i) + y - em + 2;
+	r->y = depth(caret.depth) + y - em + 2;
 	r->width = em;
 	r->height = em;
 }
@@ -196,15 +197,22 @@ void bar(const char *cx, int x, int y)
 void note(const char *cx, int i, int x, int y)
 {
 	char s[10];
+	int  j;
+	int  maxj = 0;
 
 	save(cx);
 	translate(cx, 0, y);
-	sprintf(s, "%d", tune[i].fret);
-	filltext(cx, s, x - strlen(s) * ex / 2, depth(i));
+	for (j = 0; j < MAXSTR; j++) {
+		if (tune[i].string & (1 << j)) {
+			sprintf(s, "%d", tune[i].fret[j]);
+			filltext(cx, s, x - strlen(s) * ex / 2, depth(j));
+			maxj = j > maxj ? j : maxj;
+		}
+	}
 	if (tune[i].stem) {
 		beginpath(cx);
 		moveto(cx, x, 6 * em);
-		lineto(cx, x, depth(i) + 2);
+		lineto(cx, x, depth(maxj) + 2);
 		stroke(cx);
 	}
 	if (tune[i].beam) {
@@ -223,7 +231,7 @@ void note(const char *cx, int i, int x, int y)
 		stroke(cx);
 	}
 	if (tune[i].hon) {
-		filltext(cx, "H", x + width(i)/2, depth(i) - 5);
+		filltext(cx, "H", x + width(i)/2, depth(0) - 5);
 	}
 	restore(cx);
 }
@@ -332,7 +340,7 @@ void setpos(int newpos, int newdepth)
 {
 	struct rect r;
 
-	if (newpos < 0 || newpos > length || newdepth < 1 || newdepth > 5)
+	if (newpos < 0 || newpos > length || newdepth < 0 || newdepth > 4)
 		return;
 
 	save(cx);
@@ -356,26 +364,27 @@ void setpos(int newpos, int newdepth)
 
 void input(char c)
 {
-	int i, n, f;
+	int i, n, f, g;
 
 	i = caret.pos;
 	n = c - '0';
-	f = tune[i].fret * 10;
+	g = caret.depth;
+	f = tune[i].fret[g] * 10;
 
 	if (f + n > MAXFRET)
 		f = n;
 	else
 		f += n;
 
-	tune[i].fret = f;
+	tune[i].string |= 1 << g;
+	tune[i].fret[g] = f;
 
 	if (i == length) {
-		tune[i].string = caret.depth;
 		tune[i].duration = caret.duration;
 		++length;
 	}
 
-	//tune[i].stem = (tune[i].duration > 2);
+	tune[i].stem = (tune[i].duration > 2);
 
 	repaint();
 }
@@ -390,7 +399,7 @@ int main(int argc, char *argv[])
 	paint(cx);
 
 	caret.pos = 0;
-	caret.depth = 3;
+	caret.depth = 0;
 	caret.duration = 4;
 
 	while ((c = getchar()) != EOF) {

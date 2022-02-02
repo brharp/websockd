@@ -362,6 +362,19 @@ void setpos(int newpos, int newdepth)
 }
 
 
+void del()
+{
+	int i, j;
+
+	if ((i = caret.pos) < length) {
+		j = caret.depth;
+		tune[i].string &= ~(1 << j);
+		tune[i].stem = (tune[i].string != 0);
+		repaint();
+	}
+}
+
+
 void input(char c)
 {
 	int i, n, f, g;
@@ -421,6 +434,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'q':
 			setdur(4);
+			break;
+		case 'x':
+			del();
 			break;
 		default:
 			if (isdigit(c)) {

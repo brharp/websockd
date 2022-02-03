@@ -119,13 +119,32 @@ int delta(int i)
 	return 16 / tune[i].duration;
 }
 
-/* Translate model coordinate to view coordinates. The model
-   coordinate, index, is an offset in the tune array. It must be greater
-   than or equal to zero, and less than or equal to the length of the
-   tune. An index equal to the tune length is a special case, it allows
-   for addressing the position just past the end of the array (where
-   new notes are appended to the tune.) r is a pointer to a rectangle
-   (struct rect) that will be filled in with the view coordinates. */
+/*
+
+Translate model coordinate to view coordinates. The model coordinate,
+index, is an offset in the tune array. It must be greater than or equal
+to zero, and less than or equal to the length of the tune. An index
+equal to the tune length is a special case, it allows for addressing the
+position just past the end of the array (where new notes are appended
+to the tune.) r is a pointer to a rectangle (struct rect) that will be
+filled in with the view coordinates.
+
+Alot of this code is duplicated in drawing functions and is concerned
+with breaking music into lines and measures. Whenever there is a break
+between measures, we need to leave space for the bar line and a small
+margin before the first note of the measure. At a line break we need
+to still draw the bar line, but also move vertically to the next line,
+reset the horizontal position back to zero, and then redraw the bar line
+and margin.
+
+This code could be made simpler if the line and measure breaking code
+was factored out. Then mtov could find which measure a given position
+belongs to and simply calculate the offset within the measure. Likewise,
+painting code could work line by line and measure by measure, inserting
+the necessary breaks along the way.
+
+*/
+
 void mtov(int index, struct rect *r)
 {
 	int i, x, y = 0, t;
@@ -402,9 +421,21 @@ void input(char c)
 	repaint();
 }
 
+void doctrlinput(const char *s)
+{
+	switch (*s) {
+	case '4':
+		setdur(4);
+		break;
+	case '8':
+		setdur(8);
+		break;
+	}
+}
+
 int main(int argc, char *argv[])
 {
-	int c;
+	char cmd[80];
 
 	initune();
 
@@ -415,8 +446,8 @@ int main(int argc, char *argv[])
 	caret.depth = 0;
 	caret.duration = 4;
 
-	while ((c = getchar()) != EOF) {
-		switch (c) {
+	while ((scanf("%s", cmd)) == 1) {
+		switch (cmd[0]) {
 		case 'l':
 			setpos(caret.pos + 1, caret.depth);
 			break;
@@ -429,18 +460,17 @@ int main(int argc, char *argv[])
 		case 'k':
 			setpos(caret.pos, caret.depth - 1);
 			break;
-		case 'e':
-			setdur(8);
-			break;
-		case 'q':
-			setdur(4);
-			break;
 		case 'x':
 			del();
 			break;
+		case 'C':
+			if (strncmp(cmd, "Ctrl", 4) == 0) {
+				doctrlinput(cmd+4);
+			}
+			break;
 		default:
-			if (isdigit(c)) {
-				input(c);
+			if (isdigit(*cmd)) {
+				input(*cmd);
 			}
 			break;
 		}

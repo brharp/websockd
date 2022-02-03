@@ -11,27 +11,9 @@ ws.onmessage = function(event) {
 };
 
 document.body.addEventListener("keyup", (event) => {
-  switch (event.key) {
-    case 'ArrowLeft':
-    case 'h':
-      ws.send('h');
-      break;
-    case 'ArrowRight':
-    case 'l':
-      ws.send('l');
-      break;
-    case 'ArrowDown':
-    case 'j':
-      ws.send('j');
-      break;
-    case 'ArrowUp':
-    case 'k':
-      ws.send('k');
-      break;
-    default:
-      ws.send(event.key);
-      break;
-  }
+  let cmd = (event.ctrlKey ? "Ctrl" : "") + event.key;
+  console.log(cmd);
+  ws.send(cmd);
 });
 
 

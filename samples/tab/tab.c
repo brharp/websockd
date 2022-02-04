@@ -381,7 +381,7 @@ void setpos(int newpos, int newdepth)
 }
 
 
-void del()
+void clear()
 {
 	int i, j;
 
@@ -433,6 +433,28 @@ void doctrlinput(const char *s)
 	}
 }
 
+void del()
+{
+	int i = caret.pos;
+	int n = (--length) - i;
+
+	memmove(&tune[i], &tune[i+1], n * sizeof(struct note));
+
+	repaint();
+}
+
+void insert()
+{
+	if (length < MAXLEN) {
+		int i = caret.pos;
+		int n = (length++) - i;
+		memmove(&tune[i+1], &tune[i], n * sizeof(struct note));
+		bzero(&tune[i], sizeof(tune[i]));
+		tune[i].duration = caret.duration;
+		repaint();
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	char cmd[80];
@@ -461,12 +483,18 @@ int main(int argc, char *argv[])
 			setpos(caret.pos, caret.depth - 1);
 			break;
 		case 'x':
-			del();
+			clear();
 			break;
 		case 'C':
 			if (strncmp(cmd, "Ctrl", 4) == 0) {
 				doctrlinput(cmd+4);
 			}
+			break;
+		case 'D':
+			del();
+			break;
+		case 'I':
+			insert();
 			break;
 		default:
 			if (isdigit(*cmd)) {

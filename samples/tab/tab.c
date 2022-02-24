@@ -284,8 +284,11 @@ void setup()
 
 void paint(const char *cx)
 {
-	int i, x = 0, y = 0, t;
+	int i, x = 0, dx, y = 0, t, dt, m, w;
 	const char *dl = "dl";
+
+	m = 16;
+	w = 512;
 
 	newlist(dl);
 
@@ -294,18 +297,24 @@ void paint(const char *cx)
 
 	staff(dl, x, y);
 
-	for (i = 0, x = 10, t = 0; i < length; x += width(i), t += delta(i), i++) {
-		if (t > 0 && ((t % 48 == 0) || (t % 48) + delta(i) > 48)) {
+	for (i = 0, x = 10, t = 0; i < length; i++) {
+		dt = delta(i);
+		dx = width(i);
+		if (t + dt > m) {
 			bar(dl, x, y);
+			x += 10;
+			t = 0;
+		}
+		if (x + dx > w) {
 			x = 0;
 			y += 100;
 			staff(dl, x, y);
-		}
-		if (t > 0 && ((t % 16 == 0) || (t % 16) + delta(i) > 16)) {
 			bar(dl, x, y);
 			x += 10;
 		}
 		note(dl, i, x, y);
+		t += dt;
+		x += dx;
 	}
 
 	bar(dl, x, y);

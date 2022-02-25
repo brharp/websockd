@@ -25,7 +25,7 @@ struct note {
 	int duration;
 	int stem;
 	int beam;
-	int hon;
+	int hon;	/* Hammer on */
 	int flags;
 	int x;
 	int y;

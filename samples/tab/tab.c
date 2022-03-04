@@ -463,7 +463,7 @@ void savefile()
 			alert("File not found");
 			return;
 		}
-		nw = fwrite(tune, sizeof note, length, fp);
+		nw = fwrite(tune, sizeof tune[0], length, fp);
 		if (nw < length) {
 			fclose(fp);
 			alert("Save failed.");
@@ -472,6 +472,37 @@ void savefile()
 		fclose(fp);
 		alert("Saved");
 	}
+}
+
+void loadfile()
+{
+	char filename[80];
+	char pathname[MAXPATH];
+	int nr, nb;
+	FILE *fp;
+
+	strcpy(filename, "");
+	prompt(filename, sizeof(filename), "Load from:");
+	if (strlen(filename) > 0) {
+		strcat(strcpy(pathname, "/var/tmp/"), filename);
+		fp = fopen(pathname, "r");
+		if (fp == NULL) {
+			alert("File not found");
+			return;
+		}
+		fseek(fp, 0, SEEK_END);
+		nb = ftell(fp);
+		rewind(fp);
+		length = nb / sizeof tune[0];
+		nr = fread(tune, sizeof tune[0], length, fp);
+		if (nr < length) {
+			fclose(fp);
+			alert("Load failed.");
+			return;
+		}
+		fclose(fp);
+	}
+	repaint();
 }
 
 int main(int argc, char *argv[])
@@ -516,6 +547,7 @@ int main(int argc, char *argv[])
 			insert();
 			break;
 		case 'L':
+			loadfile();
 			break;
 		case 'S':
 			savefile();

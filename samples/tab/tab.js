@@ -6,7 +6,7 @@ url = "ws://" + window.location.hostname + ":8002/tab";
 ws = new WebSocket(url);
 
 ws.onmessage = function(event) {
-  //console.log(event.data);
+  console.log(event.data);
   Function(event.data)();
 };
 
@@ -16,4 +16,10 @@ document.body.addEventListener("keyup", (event) => {
   ws.send(cmd);
 });
 
+document.body.addEventListener("click", (event) => {
+  if (event.target.tagName == "BUTTON") {
+    console.log(event.target.value);
+    ws.send(event.target.value);
+  }
+});
 

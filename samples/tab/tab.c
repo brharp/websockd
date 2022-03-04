@@ -1,11 +1,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "graph.h"
 
 #define MAXLEN 256
 #define MAXFRET 24
 #define MAXSTR 5
+#define MAXPATH 512
 
 struct rect { int x; int y; int width; int height; };
 
@@ -419,6 +424,56 @@ void insert()
 	}
 }
 
+void alert(const char *message)
+{
+	printf("alert('%s');\n", message);
+	fflush(stdout);
+}
+
+void prompt(char *buffer, int bufsiz, const char *message)
+{
+	const char *s = "s";
+	const char *ws = "ws";
+	int n;
+
+	printf("%s = prompt('%s', '%s');\n", s, message, buffer);
+	printf("console.log('User entered ' + %s);\n", s);
+	printf("%s.send(%s);\n", ws, s);
+	fflush(stdout);
+	scanf("%s", buffer);
+	n = strlen(buffer);
+	if (n > 0 && buffer[n-1] == '\n') {
+		buffer[n-1] = 0;
+	}
+}
+
+void savefile()
+{
+	char filename[80];
+	char pathname[MAXPATH];
+	int nw;
+	FILE *fp;
+
+	strcpy(filename, "");
+	prompt(filename, sizeof(filename), "Save as");
+	if (strlen(filename) > 0) {
+		strcat(strcpy(pathname, "/var/tmp/"), filename);
+		fp = fopen(pathname, "w");
+		if (fp == NULL) {
+			alert("File not found");
+			return;
+		}
+		nw = fwrite(tune, sizeof note, length, fp);
+		if (nw < length) {
+			fclose(fp);
+			alert("Save failed.");
+			return;
+		}
+		fclose(fp);
+		alert("Saved");
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	char cmd[80];
@@ -459,6 +514,11 @@ int main(int argc, char *argv[])
 			break;
 		case 'I':
 			insert();
+			break;
+		case 'L':
+			break;
+		case 'S':
+			savefile();
 			break;
 		default:
 			if (isdigit(*cmd)) {
